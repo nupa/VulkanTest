@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "hicpp-signed-bitwise"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -243,3 +245,5 @@ int main() {
     return EXIT_SUCCESS;
 }
 
+
+#pragma clang diagnostic pop
