@@ -13,7 +13,7 @@ include_directories("${GLM_INCLUDE_DIRS}")
 message("foo2")
 
 
-add_executable(VulkanTest main.cpp)
+add_executable(VulkanTest main.cpp queueselection.cpp queueselection.h validationlayers.cpp validationlayers.h)
 
 target_link_libraries(VulkanTest glfw ${Vulkan_LIBRARIES})
 
