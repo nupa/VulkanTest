@@ -15,6 +15,7 @@
 #include "swapchain.h"
 #include "device.h"
 #include "imageview.h"
+#include "gpipeline.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -59,6 +60,10 @@ private:
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
+    VkRenderPass renderPass;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
 
     void initWindow() {
         glfwInit();
@@ -77,6 +82,10 @@ private:
         setLogicalDevice();
         createSwapChain();
         createImageViews();
+        createRenderPass(device, swapChainImageFormat, &renderPass);
+        createPipelineLayout(device, &pipelineLayout);
+        createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
+        createFramebuffers();
     }
 
     void mainLoop() {
@@ -89,6 +98,12 @@ private:
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
+        for (auto framebuffer : swapChainFramebuffers) {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        vkDestroyRenderPass(device, renderPass, nullptr);
+        vkDestroyPipeline(device, graphicsPipeline, nullptr);
         for (auto imageView : swapChainImageViews) {
             vkDestroyImageView(device, imageView, nullptr);
         }
@@ -178,6 +193,14 @@ private:
             createImageView(device, swapChainImages[i], swapChainImageFormat, &swapChainImageViews[i]);
         }
     }
+
+    void createFramebuffers() {
+        swapChainFramebuffers.resize(swapChainImageViews.size());
+        for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+            createFramebuffer(device, swapChainImageViews[i], renderPass, swapChainExtent, &swapChainFramebuffers[i]);
+        }
+    }
+
     static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
