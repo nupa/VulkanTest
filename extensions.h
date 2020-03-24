@@ -11,6 +11,7 @@
 std::vector<const char*> getRequiredInstanceExtensions();
 void printInstanceExtensions();
 
+std::vector<const char*> getDeviceExtensions();
 bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
 #endif //VULKANTEST_EXTENSIONS_H

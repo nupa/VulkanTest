@@ -11,9 +11,10 @@
 
 #include "validationlayers.h"
 
-const std::vector<const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
+std::vector<const char*> getDeviceExtensions() {
+    static std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    return deviceExtensions;
+}
 
 std::vector<const char*> getRequiredInstanceExtensions() {
     uint32_t glfwExtensionCount = 0;
@@ -48,7 +49,8 @@ bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+    auto extensions = getDeviceExtensions();
+    std::set<std::string> requiredExtensions(extensions.begin(), extensions.end());
 
     for (const auto& extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
