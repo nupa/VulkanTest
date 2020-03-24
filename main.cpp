@@ -16,6 +16,7 @@
 #include "device.h"
 #include "imageview.h"
 #include "gpipeline.h"
+#include "drawing.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -64,6 +65,8 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> commandBuffers;
 
     void initWindow() {
         glfwInit();
@@ -86,6 +89,8 @@ private:
         createPipelineLayout(device, &pipelineLayout);
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
+        createCommandPool(device, physicalDevice, surface, &commandPool);
+        createCommandBuffers();
     }
 
     void mainLoop() {
@@ -98,6 +103,7 @@ private:
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
+        vkDestroyCommandPool(device, commandPool, nullptr);
         for (auto framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
@@ -198,6 +204,22 @@ private:
         swapChainFramebuffers.resize(swapChainImageViews.size());
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             createFramebuffer(device, swapChainImageViews[i], renderPass, swapChainExtent, &swapChainFramebuffers[i]);
+        }
+    }
+
+    void createCommandBuffers() {
+        commandBuffers.resize(swapChainFramebuffers.size());
+        VkCommandBufferAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+
+        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate command buffers!");
+        }
+        for (size_t i = 0; i < commandBuffers.size(); i++) {
+            recordCommandBuffer(commandBuffers[i], renderPass, swapChainFramebuffers[i], swapChainExtent, graphicsPipeline);
         }
     }
 
