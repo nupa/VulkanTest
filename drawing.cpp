@@ -21,7 +21,7 @@ void createCommandPool(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfa
     }
 }
 
-void recordCommandBuffer(VkCommandBuffer commandBuffer, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline graphicsPipeline) {
+void recordCommandBuffer(VkCommandBuffer commandBuffer, VkBuffer vertexBuffer, uint32_t vertexCount, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline graphicsPipeline) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0; // Optional
@@ -43,7 +43,12 @@ void recordCommandBuffer(VkCommandBuffer commandBuffer, VkRenderPass renderPass,
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+    VkBuffer vertexBuffers[] = {vertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+    vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
     vkCmdEndRenderPass(commandBuffer);
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");

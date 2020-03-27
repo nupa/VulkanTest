@@ -17,6 +17,7 @@
 #include "imageview.h"
 #include "gpipeline.h"
 #include "drawing.h"
+#include "vertexdata.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -67,6 +68,8 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -101,6 +104,7 @@ private:
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
         createCommandPool(device, physicalDevice, surface, &commandPool);
+        createVertexBuffer(device, physicalDevice, &vertexBufferMemory, &vertexBuffer);
         createCommandBuffers();
         createSyncObjects();
     }
@@ -332,8 +336,9 @@ private:
         if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
+        auto vCount = vertexCount();
         for (size_t i = 0; i < commandBuffers.size(); i++) {
-            recordCommandBuffer(commandBuffers[i], renderPass, swapChainFramebuffers[i], swapChainExtent, graphicsPipeline);
+            recordCommandBuffer(commandBuffers[i], vertexBuffer, vCount, renderPass, swapChainFramebuffers[i], swapChainExtent, graphicsPipeline);
         }
     }
 

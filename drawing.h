@@ -8,6 +8,6 @@
 #include <vulkan/vulkan.h>
 
 void createCommandPool(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkCommandPool* commandPool);
-void recordCommandBuffer(VkCommandBuffer commandBuffer, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline graphicsPipeline);
+void recordCommandBuffer(VkCommandBuffer commandBuffer, VkBuffer vertexBuffer, uint32_t vertexCount, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline graphicsPipeline);
 
 #endif //VULKANTEST_DRAWING_H
