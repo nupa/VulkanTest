@@ -104,7 +104,7 @@ private:
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
         createCommandPool(device, physicalDevice, surface, &commandPool);
-        createVertexBuffer(device, physicalDevice, &vertexBufferMemory, &vertexBuffer);
+        createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
         createCommandBuffers();
         createSyncObjects();
     }
@@ -185,6 +185,8 @@ private:
 
         cleanupSwapChain();
 
+        vkDestroyBuffer(device, vertexBuffer, nullptr);
+        vkFreeMemory(device, vertexBufferMemory, nullptr);
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
