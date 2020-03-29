@@ -70,6 +70,8 @@ private:
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -105,6 +107,7 @@ private:
         createFramebuffers();
         createCommandPool(device, physicalDevice, surface, &commandPool);
         createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
+        createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
         createCommandBuffers();
         createSyncObjects();
     }
@@ -185,6 +188,8 @@ private:
 
         cleanupSwapChain();
 
+        vkDestroyBuffer(device, indexBuffer, nullptr);
+        vkFreeMemory(device, indexBufferMemory, nullptr);
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -338,9 +343,9 @@ private:
         if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
-        auto vCount = vertexCount();
+        auto iCount = indexCount();
         for (size_t i = 0; i < commandBuffers.size(); i++) {
-            recordCommandBuffer(commandBuffers[i], vertexBuffer, vCount, renderPass, swapChainFramebuffers[i], swapChainExtent, graphicsPipeline);
+            recordCommandBuffer(commandBuffers[i], vertexBuffer, indexBuffer, iCount, renderPass, swapChainFramebuffers[i], swapChainExtent, graphicsPipeline);
         }
     }
 

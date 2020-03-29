@@ -21,6 +21,10 @@ struct Vertex {
 
 void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue transferQueue, VkDeviceMemory* vertexBufferMemory, VkBuffer* vertexBuffer);
 
+void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue transferQueue, VkDeviceMemory* indexBufferMemory, VkBuffer* indexBuffer);
+
 uint32_t vertexCount();
+
+uint32_t indexCount();
 
 #endif //VULKANTEST_VERTEXDATA_H
