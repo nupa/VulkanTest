@@ -8,10 +8,8 @@ find_package( GLM REQUIRED)
 find_package( VULKAN REQUIRED)
 
 include_directories("${GLM_INCLUDE_DIRS}")
-include_directories("${GLM_INCLUDE_DIRS}")
 
-message("foo2")
-
+message(${Vulkan_LIBRARIES})
 
 add_executable(VulkanTest main.cpp queueselection.cpp queueselection.h validationlayers.cpp validationlayers.h extensions.cpp extensions.h swapchain.cpp swapchain.h device.cpp device.h imageview.cpp imageview.h gpipeline.cpp gpipeline.h drawing.cpp drawing.h vertexdata.cpp vertexdata.h)
 
