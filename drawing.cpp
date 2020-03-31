@@ -22,7 +22,8 @@ void createCommandPool(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfa
 }
 
 void recordCommandBuffer(VkCommandBuffer commandBuffer, VkBuffer vertexBuffer, VkBuffer indexBuffer,
-        uint32_t indexCount, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline graphicsPipeline) {
+        uint32_t indexCount, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline graphicsPipeline,
+        VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0; // Optional
@@ -50,6 +51,7 @@ void recordCommandBuffer(VkCommandBuffer commandBuffer, VkBuffer vertexBuffer, V
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptorSet, 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
     vkCmdEndRenderPass(commandBuffer);
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {

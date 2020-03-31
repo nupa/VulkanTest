@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <functional>
 #include <cstdlib>
 #include <vector>
 
@@ -65,6 +64,9 @@ private:
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
     VkRenderPass renderPass;
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -72,6 +74,8 @@ private:
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -102,12 +106,15 @@ private:
         createSwapChain();
         createImageViews();
         createRenderPass(device, swapChainImageFormat, &renderPass);
-        createPipelineLayout(device, &pipelineLayout);
+        createDescriptorSetLayout(device, &descriptorSetLayout);
+        createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
         createCommandPool(device, physicalDevice, surface, &commandPool);
         createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
         createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
+        createUniformBuffers();
+        createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, &descriptorPool, descriptorSets);
         createCommandBuffers();
         createSyncObjects();
     }
@@ -139,6 +146,8 @@ private:
         }
         // Mark the image as now being in use by this frame
         imagesInFlight[imageIndex] = inFlightFences[currentFrame];
+
+        updateUniformBuffer(device, uniformBuffersMemory[imageIndex], swapChainExtent);
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -187,7 +196,7 @@ private:
         }
 
         cleanupSwapChain();
-
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
         vkDestroyBuffer(device, vertexBuffer, nullptr);
@@ -280,6 +289,18 @@ private:
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
     }
 
+    void createUniformBuffers() {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        uniformBuffers.resize(swapChainImages.size());
+        uniformBuffersMemory.resize(swapChainImages.size());
+
+        for (size_t i = 0; i < swapChainImages.size(); i++) {
+            createBuffer(device, physicalDevice, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &uniformBuffers[i], &uniformBuffersMemory[i]);
+        }
+    }
+
     void cleanupSwapChain() {
         for (auto framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -293,6 +314,11 @@ private:
             vkDestroyImageView(device, imageView, nullptr);
         }
         vkDestroySwapchainKHR(device, swapChain, nullptr);
+        for (size_t i = 0; i < swapChainImages.size(); i++) {
+            vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+            vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+        }
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     }
 
     void recreateSwapChain() {
@@ -311,9 +337,11 @@ private:
         createSwapChain();
         createImageViews();
         createRenderPass(device, swapChainImageFormat, &renderPass);
-        createPipelineLayout(device, &pipelineLayout);
+        createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
+        createUniformBuffers();
+        createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, &descriptorPool, descriptorSets);
         createCommandBuffers();
     }
 
@@ -345,7 +373,8 @@ private:
         }
         auto iCount = indexCount();
         for (size_t i = 0; i < commandBuffers.size(); i++) {
-            recordCommandBuffer(commandBuffers[i], vertexBuffer, indexBuffer, iCount, renderPass, swapChainFramebuffers[i], swapChainExtent, graphicsPipeline);
+            recordCommandBuffer(commandBuffers[i], vertexBuffer, indexBuffer, iCount, renderPass,
+                    swapChainFramebuffers[i], swapChainExtent, graphicsPipeline, pipelineLayout, &descriptorSets[i]);
         }
     }
 
