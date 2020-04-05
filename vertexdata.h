@@ -14,9 +14,10 @@
 struct Vertex {
     glm::vec2 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription();
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
 };
 
 struct UniformBufferObject {
@@ -31,14 +32,13 @@ void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkComm
 
 void createIndexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue transferQueue, VkDeviceMemory* indexBufferMemory, VkBuffer* indexBuffer);
 
-void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer* buffer, VkDeviceMemory* bufferMemory);
-
 void createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout* descriptorSetLayout);
 
 void updateUniformBuffer(VkDevice device, VkDeviceMemory memory, VkExtent2D extent);
 
 void createDescriptorSets(VkDevice device, uint32_t frames, VkDescriptorSetLayout descriptorSetLayout,
-                          std::vector<VkBuffer>& uniformBuffers, VkDescriptorPool* descriptorPool, std::vector<VkDescriptorSet>& descriptorSetsRef);
+                          std::vector<VkBuffer>& uniformBuffers, VkImageView textureImageView, VkSampler textureSampler,
+                          VkDescriptorPool* descriptorPool, std::vector<VkDescriptorSet>& descriptorSetsRef);
 
 uint32_t vertexCount();
 

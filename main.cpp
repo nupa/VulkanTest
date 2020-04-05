@@ -13,10 +13,11 @@
 #include "extensions.h"
 #include "swapchain.h"
 #include "device.h"
-#include "imageview.h"
 #include "gpipeline.h"
 #include "drawing.h"
 #include "vertexdata.h"
+#include "images.h"
+#include "buffer.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -83,6 +84,13 @@ private:
     std::vector<VkFence> inFlightFences;
     std::vector<VkFence> imagesInFlight;
     size_t currentFrame = 0;
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
+    VkImageView textureImageView;
+    VkSampler textureSampler;
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
 
     bool framebufferResized = false;
 
@@ -111,10 +119,13 @@ private:
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
         createCommandPool(device, physicalDevice, surface, &commandPool);
+        createTextureImage(device, physicalDevice, commandPool, graphicsQueue, &textureImage, &textureImageMemory);
+        createTextureSampler(device, &textureSampler);
+        createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, &textureImageView);
         createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
         createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
         createUniformBuffers();
-        createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, &descriptorPool, descriptorSets);
+        createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, textureImageView, textureSampler, &descriptorPool, descriptorSets);
         createCommandBuffers();
         createSyncObjects();
     }
@@ -196,6 +207,10 @@ private:
         }
 
         cleanupSwapChain();
+        vkDestroySampler(device, textureSampler, nullptr);
+        vkDestroyImageView(device, textureImageView, nullptr);
+        vkDestroyImage(device, textureImage, nullptr);
+        vkFreeMemory(device, textureImageMemory, nullptr);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
@@ -341,7 +356,7 @@ private:
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createFramebuffers();
         createUniformBuffers();
-        createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, &descriptorPool, descriptorSets);
+        createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, textureImageView, textureSampler, &descriptorPool, descriptorSets);
         createCommandBuffers();
     }
 
@@ -349,7 +364,7 @@ private:
         std::cout << "Creating " << swapChainImages.size() << " image views." << std::endl;
         swapChainImageViews.resize(swapChainImages.size());
         for (size_t i = 0; i < swapChainImages.size(); i++) {
-            createImageView(device, swapChainImages[i], swapChainImageFormat, &swapChainImageViews[i]);
+            createImageView(device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, &swapChainImageViews[i]);
         }
     }
 
