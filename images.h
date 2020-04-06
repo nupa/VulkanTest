@@ -15,4 +15,11 @@ void createImageView(VkDevice device, VkImage image, VkFormat imageFormat, VkIma
 
 void createTextureSampler(VkDevice device, VkSampler* textureSampler);
 
+VkFormat findDepthImageFormat(VkPhysicalDevice physicalDevice);
+
+void createDepthImageResources(
+        VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue,
+        VkExtent2D extent,
+        VkImage* depthImage, VkDeviceMemory* depthImageMemory, VkImageView* depthImageView);
+
 #endif //VULKANTEST_IMAGES_H

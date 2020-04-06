@@ -113,13 +113,14 @@ private:
         setLogicalDevice();
         createSwapChain();
         createImageViews();
-        createRenderPass(device, swapChainImageFormat, &renderPass);
+        createRenderPass(device, findDepthImageFormat(physicalDevice), swapChainImageFormat, &renderPass);
         createDescriptorSetLayout(device, &descriptorSetLayout);
         createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
-        createFramebuffers();
         createCommandPool(device, physicalDevice, surface, &commandPool);
         createTextureImage(device, physicalDevice, commandPool, graphicsQueue, &textureImage, &textureImageMemory);
+        createDepthImageResources(device, physicalDevice, commandPool, graphicsQueue, swapChainExtent, &depthImage, &depthImageMemory, &depthImageView);
+        createFramebuffers();
         createTextureSampler(device, &textureSampler);
         createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, &textureImageView);
         createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
@@ -317,6 +318,10 @@ private:
     }
 
     void cleanupSwapChain() {
+        vkDestroyImageView(device, depthImageView, nullptr);
+        vkDestroyImage(device, depthImage, nullptr);
+        vkFreeMemory(device, depthImageMemory, nullptr);
+
         for (auto framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
@@ -351,9 +356,10 @@ private:
 
         createSwapChain();
         createImageViews();
-        createRenderPass(device, swapChainImageFormat, &renderPass);
+        createRenderPass(device, findDepthImageFormat(physicalDevice), swapChainImageFormat, &renderPass);
         createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
+        createDepthImageResources(device, physicalDevice, commandPool, graphicsQueue, swapChainExtent, &depthImage, &depthImageMemory, &depthImageView);
         createFramebuffers();
         createUniformBuffers();
         createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, textureImageView, textureSampler, &descriptorPool, descriptorSets);
@@ -371,7 +377,7 @@ private:
     void createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            createFramebuffer(device, swapChainImageViews[i], renderPass, swapChainExtent, &swapChainFramebuffers[i]);
+            createFramebuffer(device, swapChainImageViews[i], depthImageView, renderPass, swapChainExtent, &swapChainFramebuffers[i]);
         }
     }
 
