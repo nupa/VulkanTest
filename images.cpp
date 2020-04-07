@@ -151,7 +151,7 @@ void createImage(VkDevice device, VkPhysicalDevice physicalDevice,
 void createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue,
         VkImage* textureImage, VkDeviceMemory* textureImageMemory) {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("textures/texture.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load("textures/chalet.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {
@@ -162,6 +162,8 @@ void createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, VkComm
     VkDeviceMemory stagingBufferMemory;
 
     createBuffer(device, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, &stagingBufferMemory);
+
+    std::vector<int> i;
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);

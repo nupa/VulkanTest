@@ -18,6 +18,8 @@ struct Vertex {
 
     static VkVertexInputBindingDescription getBindingDescription();
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+
+    bool operator==(const Vertex& other) const;
 };
 
 struct UniformBufferObject {
@@ -26,7 +28,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
 };
 
-
+void loadModel();
 
 void createVertexBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue transferQueue, VkDeviceMemory* vertexBufferMemory, VkBuffer* vertexBuffer);
 

@@ -123,6 +123,7 @@ private:
         createFramebuffers();
         createTextureSampler(device, &textureSampler);
         createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, &textureImageView);
+        loadModel();
         createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
         createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
         createUniformBuffers();
