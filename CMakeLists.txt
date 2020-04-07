@@ -8,7 +8,7 @@ find_package( GLM REQUIRED)
 find_package( VULKAN REQUIRED)
 
 include_directories("${GLM_INCLUDE_DIRS}")
-include_directories("/Users/pakerman/work/code/libraries/stb")
+include_directories("libraries")
 
 message(${Vulkan_LIBRARIES})
 
