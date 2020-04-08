@@ -9,11 +9,11 @@
 #include <vector>
 
 void createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue,
-                        VkImage* textureImage, VkDeviceMemory* textureImageMemory);
+        uint32_t &mipLevels, VkImage* textureImage, VkDeviceMemory* textureImageMemory);
 
-void createImageView(VkDevice device, VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageView *imageView);
+void createImageView(VkDevice device, VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, uint32_t mipLevels, VkImageView *imageView);
 
-void createTextureSampler(VkDevice device, VkSampler* textureSampler);
+void createTextureSampler(VkDevice device, uint32_t mipLevels, VkSampler* textureSampler);
 
 VkFormat findDepthImageFormat(VkPhysicalDevice physicalDevice);
 

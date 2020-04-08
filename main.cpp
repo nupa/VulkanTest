@@ -118,11 +118,12 @@ private:
         createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
         createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
         createCommandPool(device, physicalDevice, surface, &commandPool);
-        createTextureImage(device, physicalDevice, commandPool, graphicsQueue, &textureImage, &textureImageMemory);
+        uint32_t mipLevels = 1;
+        createTextureImage(device, physicalDevice, commandPool, graphicsQueue, mipLevels, &textureImage, &textureImageMemory);
         createDepthImageResources(device, physicalDevice, commandPool, graphicsQueue, swapChainExtent, &depthImage, &depthImageMemory, &depthImageView);
         createFramebuffers();
-        createTextureSampler(device, &textureSampler);
-        createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, &textureImageView);
+        createTextureSampler(device, mipLevels, &textureSampler);
+        createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, &textureImageView);
         loadModel();
         createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
         createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
@@ -371,7 +372,7 @@ private:
         std::cout << "Creating " << swapChainImages.size() << " image views." << std::endl;
         swapChainImageViews.resize(swapChainImages.size());
         for (size_t i = 0; i < swapChainImages.size(); i++) {
-            createImageView(device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, &swapChainImageViews[i]);
+            createImageView(device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, &swapChainImageViews[i]);
         }
     }
 

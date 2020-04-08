@@ -14,6 +14,6 @@ void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize
 void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
-void endSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkQueue cmdQueue, VkCommandBuffer commandBuffer);
+void endAndSubmitSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkQueue cmdQueue, VkCommandBuffer commandBuffer);
 
 #endif //VULKANTEST_BUFFER_H

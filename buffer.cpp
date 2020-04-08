@@ -24,7 +24,7 @@ VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPo
     return commandBuffer;
 }
 
-void endSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkQueue cmdQueue, VkCommandBuffer commandBuffer) {
+void endAndSubmitSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkQueue cmdQueue, VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo = {};
@@ -45,7 +45,7 @@ void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkBuf
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    endSingleTimeCommands(device, commandPool, queue, commandBuffer);
+    endAndSubmitSingleTimeCommands(device, commandPool, queue, commandBuffer);
 }
 
 uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
