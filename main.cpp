@@ -54,7 +54,7 @@ private:
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    PhysicalDevice physicalDevice;
     VkDevice device;
     VkSurfaceKHR surface;
     VkQueue graphicsQueue;
@@ -91,6 +91,7 @@ private:
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
+    ColorImage colorImage;
 
     bool framebufferResized = false;
 
@@ -109,24 +110,25 @@ private:
         createInstance();
         setupDebugMessenger();
         createSurface();
-        selectPhysicalDevice();
+        physicalDevice.initDevice(instance, surface);
         setLogicalDevice();
         createSwapChain();
         createImageViews();
-        createRenderPass(device, findDepthImageFormat(physicalDevice), swapChainImageFormat, &renderPass);
+        createRenderPass(device, findDepthImageFormat(physicalDevice.device()), swapChainImageFormat, &renderPass, physicalDevice.maxUsableSampleCount());
         createDescriptorSetLayout(device, &descriptorSetLayout);
         createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
-        createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
-        createCommandPool(device, physicalDevice, surface, &commandPool);
+        createGraphicsPipeline(device, swapChainExtent, physicalDevice.maxUsableSampleCount(), renderPass, pipelineLayout, &graphicsPipeline);
+        createCommandPool(device, physicalDevice.device(), surface, &commandPool);
         uint32_t mipLevels = 1;
-        createTextureImage(device, physicalDevice, commandPool, graphicsQueue, mipLevels, &textureImage, &textureImageMemory);
+        createTextureImage(device, physicalDevice.device(), commandPool, graphicsQueue, mipLevels, &textureImage, &textureImageMemory);
+        colorImage.initResources(device, physicalDevice.device(), swapChainImageFormat, swapChainExtent, physicalDevice.maxUsableSampleCount());
         createDepthImageResources(device, physicalDevice, commandPool, graphicsQueue, swapChainExtent, &depthImage, &depthImageMemory, &depthImageView);
         createFramebuffers();
         createTextureSampler(device, mipLevels, &textureSampler);
         createImageView(device, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, &textureImageView);
         loadModel();
-        createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
-        createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
+        createVertexBuffer(device, physicalDevice.device(), commandPool, graphicsQueue, &vertexBufferMemory, &vertexBuffer);
+        createIndexBuffer(device, physicalDevice.device(), commandPool, graphicsQueue, &indexBufferMemory, &indexBuffer);
         createUniformBuffers();
         createDescriptorSets(device, static_cast<uint32_t>(swapChainImages.size()), descriptorSetLayout, uniformBuffers, textureImageView, textureSampler, &descriptorPool, descriptorSets);
         createCommandBuffers();
@@ -276,14 +278,10 @@ private:
         }
     }
 
-    void selectPhysicalDevice() {
-        physicalDevice = pickPhysicalDevice(instance, surface);
-    }
-
     void setLogicalDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice.device(), surface);
 
-        createLogicalDevice(indices, physicalDevice, &device);
+        createLogicalDevice(indices, physicalDevice.device(), &device);
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
@@ -293,7 +291,7 @@ private:
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
 
-        auto createInfo = swapChainCreateInfo(physicalDevice, surface, width, height);
+        auto createInfo = swapChainCreateInfo(physicalDevice.device(), surface, width, height);
         // store some settings for later use
         swapChainImageFormat = createInfo.imageFormat;
         swapChainExtent = createInfo.imageExtent;
@@ -314,12 +312,13 @@ private:
         uniformBuffersMemory.resize(swapChainImages.size());
 
         for (size_t i = 0; i < swapChainImages.size(); i++) {
-            createBuffer(device, physicalDevice, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            createBuffer(device, physicalDevice.device(), bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &uniformBuffers[i], &uniformBuffersMemory[i]);
         }
     }
 
     void cleanupSwapChain() {
+        colorImage.cleanup(device);
         vkDestroyImageView(device, depthImageView, nullptr);
         vkDestroyImage(device, depthImage, nullptr);
         vkFreeMemory(device, depthImageMemory, nullptr);
@@ -358,9 +357,10 @@ private:
 
         createSwapChain();
         createImageViews();
-        createRenderPass(device, findDepthImageFormat(physicalDevice), swapChainImageFormat, &renderPass);
+        createRenderPass(device, findDepthImageFormat(physicalDevice.device()), swapChainImageFormat, &renderPass, physicalDevice.maxUsableSampleCount());
         createPipelineLayout(device, descriptorSetLayout, &pipelineLayout);
-        createGraphicsPipeline(device, swapChainExtent, renderPass, pipelineLayout, &graphicsPipeline);
+        createGraphicsPipeline(device, swapChainExtent, physicalDevice.maxUsableSampleCount(), renderPass, pipelineLayout, &graphicsPipeline);
+        colorImage.initResources(device, physicalDevice.device(), swapChainImageFormat, swapChainExtent, physicalDevice.maxUsableSampleCount());
         createDepthImageResources(device, physicalDevice, commandPool, graphicsQueue, swapChainExtent, &depthImage, &depthImageMemory, &depthImageView);
         createFramebuffers();
         createUniformBuffers();
@@ -379,7 +379,7 @@ private:
     void createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            createFramebuffer(device, swapChainImageViews[i], depthImageView, renderPass, swapChainExtent, &swapChainFramebuffers[i]);
+            createFramebuffer(device, swapChainImageViews[i], depthImageView, colorImage.imageView(), renderPass, swapChainExtent, &swapChainFramebuffers[i]);
         }
     }
 

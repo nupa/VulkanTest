@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "buffer.h"
+#include "device.h"
 
 void transitionImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue transitionQueue,
         VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
@@ -113,7 +114,7 @@ void copyBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue trans
 }
 
 void createImage(VkDevice device, VkPhysicalDevice physicalDevice,
-        uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+        uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
         VkMemoryPropertyFlags properties, VkImage* image, VkDeviceMemory* imageMemory) {
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -127,7 +128,7 @@ void createImage(VkDevice device, VkPhysicalDevice physicalDevice,
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = numSamples;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateImage(device, &imageInfo, nullptr, image) != VK_SUCCESS) {
@@ -267,7 +268,7 @@ void createTextureImage(VkDevice device, VkPhysicalDevice physicalDevice, VkComm
     // Clean pixel array after copy to buffer
     stbi_image_free(pixels);
 
-    createImage(device, physicalDevice, texWidth, texHeight, mipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+    createImage(device, physicalDevice, texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             textureImage, textureImageMemory);
 
@@ -359,14 +360,14 @@ VkFormat findDepthImageFormat(VkPhysicalDevice physicalDevice) {
 }
 
 void createDepthImageResources(
-        VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue,
+        VkDevice device, PhysicalDevice& physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue,
         VkExtent2D extent,
         VkImage* depthImage, VkDeviceMemory* depthImageMemory, VkImageView* depthImageView) {
 
-    VkFormat depthFormat = findDepthImageFormat(physicalDevice);
+    VkFormat depthFormat = findDepthImageFormat(physicalDevice.device());
 
-    createImage(device, physicalDevice,
-                extent.width, extent.height, 1, depthFormat,
+    createImage(device, physicalDevice.device(),
+                extent.width, extent.height, 1, physicalDevice.maxUsableSampleCount(), depthFormat,
                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
 
     createImageView(device, *depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, depthImageView);
@@ -374,3 +375,22 @@ void createDepthImageResources(
     transitionImageLayout(device, commandPool, graphicsQueue, *depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 }
 
+void ColorImage::initResources(VkDevice device, VkPhysicalDevice physicalDevice, VkFormat colorFormat, VkExtent2D extent, VkSampleCountFlagBits msaaSamples) {
+
+    createImage(device, physicalDevice, extent.width, extent.height, 1, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image, &memory);
+    createImageView(device, image, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, &vulkanImageView);
+}
+
+VkImageView ColorImage::imageView() {
+    if (vulkanImageView == VK_NULL_HANDLE) {
+        throw std::runtime_error("color image resources are not initialized!");
+    }
+
+    return vulkanImageView;
+}
+
+void ColorImage::cleanup(VkDevice device) {
+    vkDestroyImageView(device, vulkanImageView, nullptr);
+    vkDestroyImage(device, image, nullptr);
+    vkFreeMemory(device, memory, nullptr);
+}

@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <set>
+#include <iostream>
 
 #include "queueselection.h"
 #include "extensions.h"
@@ -28,7 +29,38 @@ bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
     return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
-VkPhysicalDevice pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
+VkSampleCountFlagBits findMaxUsableSampleCount(VkPhysicalDevice physicalDevice) {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+    VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+    if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+    if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+    if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+    if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+    if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+    return VK_SAMPLE_COUNT_1_BIT;
+}
+
+void PhysicalDevice::initDevice(VkInstance instance, VkSurfaceKHR surface) {
+    vulkanDevice = pickPhysicalDevice(instance, surface);
+    sampleCount = findMaxUsableSampleCount(vulkanDevice);
+}
+
+VkPhysicalDevice PhysicalDevice::device() {
+    if (vulkanDevice == VK_NULL_HANDLE) {
+        throw std::runtime_error("Physical device not initialized!");
+    }
+    return vulkanDevice;
+}
+
+VkSampleCountFlagBits PhysicalDevice::maxUsableSampleCount() {
+    return sampleCount;
+}
+
+VkPhysicalDevice PhysicalDevice::pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
